@@ -1,0 +1,414 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
+
+import '../../../../core/localization/l10n_x.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/format_utils.dart';
+
+/// Telegram-iOS 风格的透明磨砂导航栏
+///
+/// 特点：
+/// - 磨砂玻璃背景（BackdropFilter），内容滚动时透过可见
+/// - 底部渐变淡出（无硬边界）
+/// - 独立悬浮返回按钮（自带小磨砂背景）
+/// - 居中标题
+class FrostedHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback? onBack;
+  final Widget Function(bool isDark, bool isOverlapping)? trailingBuilder;
+  final double fadeOutDistance;
+  final bool isOverlapping;
+  final bool showBlur;
+  final Color? titleColor;
+  final bool useMiddleTruncate;
+  final Widget? titleWidget;
+
+  const FrostedHeader({
+    super.key,
+    required this.title,
+    this.onBack,
+    this.trailingBuilder,
+    this.fadeOutDistance = 12.0,
+    this.isOverlapping = false,
+    this.showBlur = true,
+    this.titleColor,
+    this.useMiddleTruncate = true,
+    this.titleWidget,
+  });
+
+  static const double headerHeight = 44.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final statusBarHeight = MediaQuery.paddingOf(context).top;
+    final contentHeight = statusBarHeight + headerHeight;
+    // 渐变额外向下延伸，实现非常平滑的毛玻璃淡出效果
+    final totalHeight = contentHeight + fadeOutDistance;
+
+    // 标题必须以整条 header 为基准居中。左右操作区宽度可能不同，
+    // 因此使用对称避让宽度，避免在不等宽区域内居中造成视觉偏移。
+    final leftAvoidance = onBack != null ? 82.0 : 20.0;
+    final rightAvoidance = trailingBuilder != null ? 102.0 : 20.0;
+    final horizontalPadding = leftAvoidance > rightAvoidance
+        ? leftAvoidance
+        : rightAvoidance;
+
+    // 计算纯色/强模糊部分的比例
+    final solidRatio = totalHeight > 0
+        ? (contentHeight / totalHeight).clamp(0.0, 1.0)
+        : 1.0;
+
+    // 根据重叠状态赋予样式
+    final textColor = titleColor ?? AppColors.label(context);
+    final textShadows = isOverlapping
+        ? [
+            Shadow(
+              color: isDark
+                  ? CupertinoColors.white.withValues(alpha: 0.7)
+                  : CupertinoColors.black.withValues(alpha: 0.3),
+              blurRadius: 12.0,
+            ),
+          ]
+        : null;
+
+    return SizedBox(
+      height: totalHeight,
+      child: Stack(
+        children: [
+          // 1. 渐变磨砂玻璃层。
+          //
+          // BackdropFilter 才能模糊页面背后的内容；progressive_blur 是模糊
+          // 自己的 child，不适合作为透明 header 的背景模糊替代。
+          if (showBlur)
+            Positioned.fill(
+              child: ShaderMask(
+                shaderCallback: (bounds) {
+                  return LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: const [
+                      Color(0xFFFFFFFF),
+                      Color(0xFFFFFFFF),
+                      Color(0x00FFFFFF),
+                    ],
+                    stops: [0.0, solidRatio, 1.0],
+                  ).createShader(bounds);
+                },
+                blendMode: BlendMode.dstIn,
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            isDark
+                                ? const Color(
+                                    0xFF1C1C1E,
+                                  ).withValues(alpha: 0.85)
+                                : CupertinoColors.white.withValues(alpha: 0.85),
+                            isDark
+                                ? const Color(0xFF1C1C1E).withValues(alpha: 0.1)
+                                : CupertinoColors.white.withValues(alpha: 0.1),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // 2. 标题（居中，带避让）
+          Positioned(
+            left: 0,
+            right: 0,
+            top: statusBarHeight,
+            height: headerHeight,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Center(
+                child:
+                    titleWidget ??
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        var displayTitle = title;
+                        if (useMiddleTruncate) {
+                          // 更保守的估算：考虑宽字符和内边距，平均每个字符预留 11 像素
+                          final maxChars = (constraints.maxWidth / 11.0)
+                              .floor();
+                          displayTitle = truncateMiddle(title, maxChars);
+                        }
+
+                        return AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 200),
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                            letterSpacing: -0.4,
+                            shadows: textShadows,
+                          ),
+                          child: Text(
+                            displayTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      },
+                    ),
+              ),
+            ),
+          ),
+
+          // 3. 独立现代感返回按钮（带侧滑进度弧线）
+          if (onBack != null)
+            Positioned(
+              left: 10,
+              top: statusBarHeight + (headerHeight - 34) / 2,
+              child: _SwipeAwareBackButton(
+                onTap: onBack!,
+                isDark: isDark,
+                isOverlapping: isOverlapping,
+                foregroundColor: titleColor,
+              ),
+            ),
+
+          // 4. 右侧自定义组件 (如 Connection Menu)
+          if (trailingBuilder != null)
+            Positioned(
+              right: 16,
+              top: statusBarHeight + (headerHeight - 34) / 2,
+              child: trailingBuilder!(isDark, isOverlapping),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 侧滑感知的返回按钮包装器
+/// 通过监听路由过渡动画，将侧滑进度传递给实际的按钮绘制
+class _SwipeAwareBackButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final bool isDark;
+  final bool isOverlapping;
+  final Color? foregroundColor;
+
+  const _SwipeAwareBackButton({
+    required this.onTap,
+    required this.isDark,
+    this.isOverlapping = false,
+    this.foregroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final route = ModalRoute.of(context);
+    final animation = route?.animation;
+
+    if (animation == null) {
+      return _FrostedBackButton(
+        onTap: onTap,
+        isDark: isDark,
+        isOverlapping: isOverlapping,
+        swipeProgress: 0.0,
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        // forward = push 进入页面，不应显示。
+        // pop / 侧滑返回时才显示。判断条件：动画反转，或正处于返回手势中。
+        final isPopping =
+            animation.status == AnimationStatus.reverse ||
+            (route?.navigator?.userGestureInProgress ?? false);
+        final progress = isPopping
+            ? (1.0 - animation.value).clamp(0.0, 1.0)
+            : 0.0;
+        return _FrostedBackButton(
+          onTap: onTap,
+          isDark: isDark,
+          isOverlapping: isOverlapping,
+          swipeProgress: progress,
+          foregroundColor: foregroundColor,
+        );
+      },
+    );
+  }
+}
+
+/// 重新设计的极简玻璃态返回按钮
+class _FrostedBackButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final bool isDark;
+  final bool isOverlapping;
+  final double swipeProgress;
+  final Color? foregroundColor;
+
+  const _FrostedBackButton({
+    required this.onTap,
+    required this.isDark,
+    this.isOverlapping = false,
+    this.swipeProgress = 0.0,
+    this.foregroundColor,
+  });
+
+  static const double _borderRadius = 18.0;
+  static const double _height = 34.0;
+
+  @override
+  Widget build(BuildContext context) {
+    // 根据重叠状态调整颜色和发光
+    final color = foregroundColor ?? AppColors.label(context);
+    final glowShadows = isOverlapping
+        ? [
+            BoxShadow(
+              color: isDark
+                  ? CupertinoColors.white.withValues(alpha: 0.5)
+                  : CupertinoColors.black.withValues(alpha: 0.15),
+              blurRadius: 12.0,
+            ),
+          ]
+        : null;
+
+    final containerColor = isDark
+        ? CupertinoColors.systemGrey6.darkColor.withValues(
+            alpha: isOverlapping ? 0.6 : 0.35,
+          )
+        : CupertinoColors.systemGrey6.color.withValues(
+            alpha: isOverlapping ? 0.7 : 0.5,
+          );
+
+    final progressColor = CupertinoColors.activeBlue.resolveFrom(context);
+
+    // 使用更高纯度的模糊与强调色设计
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(_borderRadius),
+          boxShadow: glowShadows,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(_borderRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 35, sigmaY: 35),
+            child: CustomPaint(
+              foregroundPainter: swipeProgress > 0.01
+                  ? _SwipeProgressPainter(
+                      progress: swipeProgress,
+                      color: progressColor,
+                      borderRadius: _borderRadius,
+                      strokeWidth: 2.0,
+                    )
+                  : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: _height,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: containerColor,
+                  borderRadius: BorderRadius.circular(_borderRadius),
+                  border: Border.all(
+                    color: isDark
+                        ? CupertinoColors.white.withValues(
+                            alpha: isOverlapping ? 0.3 : 0.15,
+                          )
+                        : CupertinoColors.black.withValues(
+                            alpha: isOverlapping ? 0.15 : 0.05,
+                          ),
+                    width: 0.5, // 细光泽边框
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(CupertinoIcons.chevron_back, size: 18, color: color),
+                    const SizedBox(width: 4),
+                    Text(
+                      context.l10n.common_back,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.2,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 沿圆角矩形边框绘制进度弧线的 CustomPainter
+class _SwipeProgressPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final double borderRadius;
+  final double strokeWidth;
+
+  _SwipeProgressPainter({
+    required this.progress,
+    required this.color,
+    required this.borderRadius,
+    this.strokeWidth = 2.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0) return;
+
+    // 构建圆角矩形路径（从顶部中心开始，顺时针转一圈）
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
+    final path = Path()..addRRect(rrect);
+
+    // 使用 PathMetrics 获取路径总长度
+    final metrics = path.computeMetrics().first;
+    final totalLength = metrics.length;
+    final drawLength = totalLength * progress.clamp(0.0, 1.0);
+
+    // 提取子路径
+    final extractPath = metrics.extractPath(0, drawLength);
+
+    // 绘制进度弧线
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.85)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawPath(extractPath, paint);
+
+    // 在弧线头部绘制一个发光点，增加视觉感
+    if (progress > 0.02 && progress < 0.98) {
+      final tangent = metrics.getTangentForOffset(drawLength);
+      if (tangent != null) {
+        final glowPaint = Paint()
+          ..color = color.withValues(alpha: 0.4)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
+        canvas.drawCircle(tangent.position, 3.0, glowPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SwipeProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth;
+  }
+}

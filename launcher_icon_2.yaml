@@ -1,0 +1,6 @@
+flutter_launcher_icons:
+  android: ic_launcher_2
+  ios: icon_2
+  image_path: assets/icons/1panel_mate_app_icon_2.png
+  remove_alpha_ios: true
+  min_sdk_android: 21

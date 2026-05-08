@@ -1,0 +1,151 @@
+import 'package:dio/dio.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../../../../core/localization/locale_controller.dart';
+import '../../../../core/network/dio_client_provider.dart';
+import '../../../../data/api/dashboard_api.dart';
+import '../../../../data/repositories_impl/server_repository_impl.dart';
+import '../../../../domain/entities/dashboard.dart';
+import '../../../../domain/entities/server.dart';
+import '../../purchases/providers/purchase_provider.dart';
+import '../../settings/providers/app_settings_provider.dart';
+
+part 'servers_provider.g.dart';
+
+/// 面板列表状态。
+///
+/// 只负责持久化与展示，连通性测试通过 [DashboardApi.getOsInfo] 走真实 API，
+/// 验证 MD5 鉴权链路是否通畅。
+@riverpod
+class ServersNotifier extends _$ServersNotifier {
+  @override
+  FutureOr<List<Server>> build() {
+    return ref.watch(serverRepositoryProvider).list();
+  }
+
+  /// Probes authentication with candidate settings before adding a panel.
+  Future<void> testConnection({
+    required String host,
+    required int port,
+    required String apiKey,
+    bool isHttps = false,
+    bool allowInsecureConnections = false,
+    CancelToken? cancelToken,
+  }) async {
+    final settings = await ref.read(appSettingsControllerProvider.future);
+    final client = await createProbeClient(
+      host: host,
+      port: port,
+      apiKey: apiKey,
+      isHttps: isHttps,
+      requestTimeoutSeconds: settings.requestTimeoutSeconds,
+      customHeaders: settings.customHeaders,
+      allowInsecureConnections: allowInsecureConnections,
+    );
+    try {
+      await DashboardApi(client).getOsInfo(cancelToken: cancelToken);
+    } finally {
+      client.dispose();
+    }
+  }
+
+  Future<void> addServer({
+    required String name,
+    required String host,
+    required int port,
+    required String apiKey,
+    bool isHttps = false,
+    bool allowInsecureConnections = false,
+  }) async {
+    final repo = ref.read(serverRepositoryProvider);
+    final currentServers = await repo.list();
+    final purchaseState = await ref.read(purchaseControllerProvider.future);
+    if (!purchaseState.canAddServer(currentServers.length)) {
+      final l10n = ref.read(appLocalizationsProvider);
+      throw ServerLimitReachedException(
+        serverCount: currentServers.length,
+        freeServerLimit: purchaseState.freeServerLimit,
+        message: l10n.purchases_serverLimitReached(
+          purchaseState.freeServerLimit,
+          currentServers.length,
+        ),
+      );
+    }
+
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await repo.add(
+        name: name.isEmpty ? null : name,
+        host: host,
+        port: port,
+        isHttps: isHttps,
+        allowInsecureConnections: allowInsecureConnections,
+        apiKey: apiKey,
+      );
+      return repo.list();
+    });
+  }
+
+  Future<void> removeServer(int id) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(serverRepositoryProvider);
+      await repo.remove(id);
+      return repo.list();
+    });
+  }
+
+  Future<void> updateServer({
+    required int id,
+    required String name,
+    required String host,
+    required int port,
+    required bool isHttps,
+    required bool allowInsecureConnections,
+    String? apiKey,
+  }) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(serverRepositoryProvider);
+      final server = await repo.find(id);
+      if (server == null) {
+        throw StateError(
+          ref.read(appLocalizationsProvider).common_serverNotFound,
+        );
+      }
+      server
+        ..name = name.isEmpty ? null : name
+        ..host = host
+        ..port = port
+        ..isHttps = isHttps
+        ..allowInsecureConnections = allowInsecureConnections;
+      await repo.update(
+        server,
+        apiKey: apiKey != null && apiKey.isNotEmpty ? apiKey : null,
+      );
+      ref.invalidate(dioClientProvider(id));
+      ref.invalidate(serverDashboardSnapshotProvider(id));
+      return repo.list();
+    });
+  }
+
+  Future<void> reorderServers(List<int> orderedIds) async {
+    final repo = ref.read(serverRepositoryProvider);
+    final current = state.valueOrNull;
+    if (current != null) {
+      final byId = {for (final server in current) server.id: server};
+      state = AsyncValue.data([
+        for (var i = 0; i < orderedIds.length; i++)
+          if (byId[orderedIds[i]] case final server?) server..sortIndex = i,
+      ]);
+    }
+    await repo.reorder(orderedIds);
+    state = await AsyncValue.guard(repo.list);
+  }
+}
+
+final serverDashboardSnapshotProvider = FutureProvider.autoDispose
+    .family<Dashboard, int>((ref, serverId) async {
+      final client = await ref.watch(dioClientProvider(serverId).future);
+      return DashboardApi(client).getDashboardSnapshot();
+    });
