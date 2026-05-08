@@ -2265,6 +2265,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_appearance_title => 'Appearance';
 
   @override
+  String get settings_appearance_modeTitle => 'Appearance Mode';
+
+  @override
+  String get settings_appearance_modeLight => 'Light';
+
+  @override
+  String get settings_appearance_modeDark => 'Dark';
+
+  @override
   String get settings_appearance_appIconTitle => 'App Icon';
 
   @override

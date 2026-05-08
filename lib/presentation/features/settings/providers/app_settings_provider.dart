@@ -54,28 +54,55 @@ enum ServerCardStyle {
   }
 }
 
+enum AppAppearanceMode {
+  system('system'),
+  light('light'),
+  dark('dark');
+
+  const AppAppearanceMode(this.name);
+
+  final String name;
+
+  String labelOf(AppLocalizations l10n) => switch (this) {
+    AppAppearanceMode.system => l10n.common_systemDefault,
+    AppAppearanceMode.light => l10n.settings_appearance_modeLight,
+    AppAppearanceMode.dark => l10n.settings_appearance_modeDark,
+  };
+
+  static AppAppearanceMode fromName(String? name) {
+    return values.firstWhere(
+      (mode) => mode.name == name,
+      orElse: () => AppAppearanceMode.system,
+    );
+  }
+}
+
 class AppSettings {
   const AppSettings({
     this.appIconVariant = AppIconVariant.defaultIcon,
     this.serverCardStyle = ServerCardStyle.simple,
+    this.appearanceMode = AppAppearanceMode.system,
     this.requestTimeoutSeconds = 60,
     this.customHeaders = const {},
   });
 
   final AppIconVariant appIconVariant;
   final ServerCardStyle serverCardStyle;
+  final AppAppearanceMode appearanceMode;
   final int requestTimeoutSeconds;
   final Map<String, String> customHeaders;
 
   AppSettings copyWith({
     AppIconVariant? appIconVariant,
     ServerCardStyle? serverCardStyle,
+    AppAppearanceMode? appearanceMode,
     int? requestTimeoutSeconds,
     Map<String, String>? customHeaders,
   }) {
     return AppSettings(
       appIconVariant: appIconVariant ?? this.appIconVariant,
       serverCardStyle: serverCardStyle ?? this.serverCardStyle,
+      appearanceMode: appearanceMode ?? this.appearanceMode,
       requestTimeoutSeconds:
           requestTimeoutSeconds ?? this.requestTimeoutSeconds,
       customHeaders: customHeaders ?? this.customHeaders,
@@ -87,6 +114,7 @@ class AppSettings {
 class AppSettingsController extends _$AppSettingsController {
   static const _appIconVariantKey = 'app_icon_variant';
   static const _serverCardStyleKey = 'server_card_style';
+  static const _appearanceModeKey = 'appearance_mode';
   static const _requestTimeoutSecondsKey = 'request_timeout_seconds';
   static const _customHeadersKey = 'custom_headers';
   static const defaultRequestTimeoutSeconds = 60;
@@ -100,6 +128,9 @@ class AppSettingsController extends _$AppSettingsController {
       ),
       serverCardStyle: ServerCardStyle.fromName(
         prefs.getString(_serverCardStyleKey),
+      ),
+      appearanceMode: AppAppearanceMode.fromName(
+        prefs.getString(_appearanceModeKey),
       ),
       requestTimeoutSeconds:
           prefs.getInt(_requestTimeoutSecondsKey) ??
@@ -128,6 +159,18 @@ class AppSettingsController extends _$AppSettingsController {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_serverCardStyleKey, style.name);
+  }
+
+  Future<void> setAppearanceMode(AppAppearanceMode mode) async {
+    final previous = state.valueOrNull ?? const AppSettings();
+    state = AsyncValue.data(previous.copyWith(appearanceMode: mode));
+
+    final prefs = await SharedPreferences.getInstance();
+    if (mode == AppAppearanceMode.system) {
+      await prefs.remove(_appearanceModeKey);
+    } else {
+      await prefs.setString(_appearanceModeKey, mode.name);
+    }
   }
 
   Future<void> setRequestTimeoutSeconds(int seconds) async {

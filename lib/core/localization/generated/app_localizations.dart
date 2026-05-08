@@ -4190,6 +4190,24 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get settings_appearance_title;
 
+  /// Settings row and picker title for app appearance mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance Mode'**
+  String get settings_appearance_modeTitle;
+
+  /// Light appearance mode option.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get settings_appearance_modeLight;
+
+  /// Dark appearance mode option.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get settings_appearance_modeDark;
+
   /// Settings row title for app icon selection.
   ///
   /// In en, this message translates to:

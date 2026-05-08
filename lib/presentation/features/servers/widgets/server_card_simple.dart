@@ -52,19 +52,19 @@ class SimpleServerCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: _SimpleCardColors.background,
+        color: _SimpleCardColors.background(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isSelected
-              ? _SimpleCardColors.selectedBorder
-              : _SimpleCardColors.border,
+              ? _SimpleCardColors.selectedBorder(context)
+              : _SimpleCardColors.border(context),
           width: isSelected ? 1.1 : 0.8,
         ),
         boxShadow: [
           BoxShadow(
-            color: CupertinoColors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: _SimpleCardColors.shadow(context),
+            blurRadius: _SimpleCardColors.isDark(context) ? 8 : 14,
+            offset: Offset(0, _SimpleCardColors.isDark(context) ? 2 : 5),
           ),
         ],
       ),
@@ -161,10 +161,10 @@ class _SimpleHeader extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
-                    color: _SimpleCardColors.title,
+                    color: _SimpleCardColors.title(context),
                     height: 1.14,
                   ),
                 ),
@@ -176,10 +176,10 @@ class _SimpleHeader extends StatelessWidget {
                   subtitle.isEmpty ? '--' : subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: _SimpleCardColors.subtitle,
+                    color: _SimpleCardColors.subtitle(context),
                     height: 1.16,
                   ),
                 ),
@@ -228,8 +228,8 @@ class _SimpleStatusPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: status.hasData
-            ? _SimpleCardColors.onlineBackground
-            : _SimpleCardColors.unknownBackground,
+            ? _SimpleCardColors.onlineBackground(context)
+            : _SimpleCardColors.unknownBackground(context),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -238,8 +238,8 @@ class _SimpleStatusPill extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w700,
           color: status.hasData
-              ? _SimpleCardColors.online
-              : _SimpleCardColors.unknown,
+              ? _SimpleCardColors.online(context)
+              : _SimpleCardColors.unknown(context),
           height: 1,
         ),
       ),
@@ -260,11 +260,11 @@ class _SimpleResourceRow extends StatelessWidget {
   final double? diskPercent;
   final bool loading;
 
-  Color _getUsageColor(double? percent) {
-    if (percent == null) return _SimpleCardColors.safe;
-    if (percent >= 85) return _SimpleCardColors.critical;
-    if (percent >= 60) return _SimpleCardColors.warning;
-    return _SimpleCardColors.safe;
+  Color _getUsageColor(BuildContext context, double? percent) {
+    if (percent == null) return _SimpleCardColors.safe(context);
+    if (percent >= 85) return _SimpleCardColors.critical(context);
+    if (percent >= 60) return _SimpleCardColors.warning(context);
+    return _SimpleCardColors.safe(context);
   }
 
   @override
@@ -275,7 +275,7 @@ class _SimpleResourceRow extends StatelessWidget {
           child: _SimpleMetric(
             label: 'CPU',
             percent: cpuPercent,
-            color: _getUsageColor(cpuPercent),
+            color: _getUsageColor(context, cpuPercent),
             loading: loading,
           ),
         ),
@@ -284,7 +284,7 @@ class _SimpleResourceRow extends StatelessWidget {
           child: _SimpleMetric(
             label: context.l10n.servers_memory,
             percent: memoryPercent,
-            color: _getUsageColor(memoryPercent),
+            color: _getUsageColor(context, memoryPercent),
             loading: loading,
           ),
         ),
@@ -293,7 +293,7 @@ class _SimpleResourceRow extends StatelessWidget {
           child: _SimpleMetric(
             label: context.l10n.servers_disk,
             percent: diskPercent,
-            color: _getUsageColor(diskPercent),
+            color: _getUsageColor(context, diskPercent),
             loading: loading,
           ),
         ),
@@ -330,10 +330,10 @@ class _SimpleMetric extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: _SimpleCardColors.metricLabel,
+                  color: _SimpleCardColors.metricLabel(context),
                   height: 1,
                 ),
               ),
@@ -344,10 +344,10 @@ class _SimpleMetric extends StatelessWidget {
             else
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
-                  color: _SimpleCardColors.title,
+                  color: _SimpleCardColors.title(context),
                   height: 1,
                 ),
               ),
@@ -358,7 +358,7 @@ class _SimpleMetric extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           child: Container(
             height: 6,
-            color: _SimpleCardColors.track,
+            color: _SimpleCardColors.track(context),
             alignment: Alignment.centerLeft,
             child: loading
                 ? null
@@ -388,7 +388,7 @@ class _SimpleDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 1, color: _SimpleCardColors.divider);
+    return Container(height: 1, color: _SimpleCardColors.divider(context));
   }
 }
 
@@ -468,7 +468,7 @@ class _SimpleCountItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 15, color: _SimpleCardColors.countIcon),
+        Icon(icon, size: 15, color: _SimpleCardColors.countIcon(context)),
         const SizedBox(width: 5),
         if (loading)
           const SkeletonItem.text(width: 24, height: 11)
@@ -477,10 +477,10 @@ class _SimpleCountItem extends StatelessWidget {
             '$label ${value ?? '--'}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: _SimpleCardColors.countText,
+              color: _SimpleCardColors.countText(context),
             ),
           ),
       ],
@@ -497,21 +497,61 @@ class _SimpleCountItem extends StatelessWidget {
 }
 
 class _SimpleCardColors {
-  static const background = Color(0xFFFFFFFF);
-  static const border = Color(0xFFE9EDF2);
-  static const selectedBorder = Color(0xFF90CAF9);
-  static const divider = Color(0xFFF0F2F5);
-  static const title = Color(0xFF111827);
-  static const subtitle = Color(0xFF667085);
-  static const metricLabel = Color(0xFF344054);
-  static const countText = Color(0xFF475467);
-  static const countIcon = Color(0xFF667085);
-  static const track = Color(0xFFE4E7EC);
-  static const safe = Color(0xFF16A34A);
-  static const warning = Color(0xFFF59E0B);
-  static const critical = Color(0xFFE11D23);
-  static const online = Color(0xFF16803A);
-  static const onlineBackground = Color(0xFFDDF7E7);
-  static const unknown = Color(0xFFB54708);
-  static const unknownBackground = Color(0xFFFFF1D6);
+  static bool isDark(BuildContext context) =>
+      CupertinoTheme.brightnessOf(context) == Brightness.dark;
+
+  static Color background(BuildContext context) =>
+      isDark(context) ? const Color(0xFF1C1C1E) : const Color(0xFFFFFFFF);
+
+  static Color border(BuildContext context) =>
+      isDark(context) ? const Color(0xFF30343B) : const Color(0xFFE9EDF2);
+
+  static Color selectedBorder(BuildContext context) => isDark(context)
+      ? CupertinoColors.activeBlue.resolveFrom(context)
+      : const Color(0xFF90CAF9);
+
+  static Color divider(BuildContext context) =>
+      isDark(context) ? const Color(0xFF2A2F36) : const Color(0xFFF0F2F5);
+
+  static Color shadow(BuildContext context) =>
+      CupertinoColors.black.withValues(alpha: isDark(context) ? 0.18 : 0.04);
+
+  static Color title(BuildContext context) =>
+      CupertinoColors.label.resolveFrom(context);
+
+  static Color subtitle(BuildContext context) =>
+      CupertinoColors.secondaryLabel.resolveFrom(context);
+
+  static Color metricLabel(BuildContext context) =>
+      isDark(context) ? const Color(0xFFAAB2BF) : const Color(0xFF344054);
+
+  static Color countText(BuildContext context) =>
+      isDark(context) ? const Color(0xFFB7BFCC) : const Color(0xFF475467);
+
+  static Color countIcon(BuildContext context) =>
+      isDark(context) ? const Color(0xFF98A2B3) : const Color(0xFF667085);
+
+  static Color track(BuildContext context) =>
+      isDark(context) ? const Color(0xFF303640) : const Color(0xFFE4E7EC);
+
+  static Color safe(BuildContext context) =>
+      isDark(context) ? const Color(0xFF4ADE80) : const Color(0xFF16A34A);
+
+  static Color warning(BuildContext context) =>
+      isDark(context) ? const Color(0xFFFBBF24) : const Color(0xFFF59E0B);
+
+  static Color critical(BuildContext context) =>
+      isDark(context) ? const Color(0xFFF87171) : const Color(0xFFE11D23);
+
+  static Color online(BuildContext context) =>
+      isDark(context) ? const Color(0xFF4ADE80) : const Color(0xFF16803A);
+
+  static Color onlineBackground(BuildContext context) =>
+      online(context).withValues(alpha: isDark(context) ? 0.16 : 0.14);
+
+  static Color unknown(BuildContext context) =>
+      isDark(context) ? const Color(0xFFFBBF24) : const Color(0xFFB54708);
+
+  static Color unknownBackground(BuildContext context) =>
+      unknown(context).withValues(alpha: isDark(context) ? 0.18 : 0.14);
 }

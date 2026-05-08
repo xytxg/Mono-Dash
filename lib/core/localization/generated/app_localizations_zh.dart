@@ -2203,6 +2203,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_appearance_title => '个性化';
 
   @override
+  String get settings_appearance_modeTitle => '外观模式';
+
+  @override
+  String get settings_appearance_modeLight => '浅色';
+
+  @override
+  String get settings_appearance_modeDark => '暗色';
+
+  @override
   String get settings_appearance_appIconTitle => 'App 图标';
 
   @override

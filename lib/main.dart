@@ -8,6 +8,7 @@ import 'core/localization/locale_controller.dart';
 import 'core/router/app_router.dart';
 import 'core/storage/storage_service.dart';
 import 'core/theme/app_theme.dart';
+import 'presentation/features/settings/providers/app_settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,10 +31,17 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final localeOption = ref.watch(localeControllerProvider);
+    final appearanceMode =
+        ref.watch(appSettingsControllerProvider).valueOrNull?.appearanceMode ??
+        AppAppearanceMode.system;
 
     return CupertinoApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).app_title,
-      theme: AppTheme.lightTheme,
+      theme: switch (appearanceMode) {
+        AppAppearanceMode.system => AppTheme.systemTheme,
+        AppAppearanceMode.light => AppTheme.lightTheme,
+        AppAppearanceMode.dark => AppTheme.darkTheme,
+      },
       routerConfig: appRouter,
       locale: localeOption.toLocale(),
       supportedLocales: AppLocalizations.supportedLocales,

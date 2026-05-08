@@ -17,6 +17,8 @@ import '../../../../core/utils/format_utils.dart';
 import '../../../common/app_toast.dart';
 import '../../../common/components/action_sheet_launcher.dart';
 import '../../../common/components/action_sheet_scaffold.dart';
+import '../../../common/components/app_action_picker_sheet.dart';
+import '../../../common/components/app_picker.dart';
 import '../../../common/components/sub_menu_page.dart';
 import '../../panel_settings/widgets/edit_setting_value_sheet.dart';
 import '../../purchases/providers/purchase_provider.dart';
@@ -47,6 +49,8 @@ class ServersSettingsTab extends ConsumerWidget {
         settings?.appIconVariant ?? AppIconVariant.defaultIcon;
     final selectedCardStyle =
         settings?.serverCardStyle ?? ServerCardStyle.simple;
+    final selectedAppearanceMode =
+        settings?.appearanceMode ?? AppAppearanceMode.system;
     final requestTimeoutSeconds =
         settings?.requestTimeoutSeconds ??
         AppSettingsController.defaultRequestTimeoutSeconds;
@@ -100,6 +104,19 @@ class ServersSettingsTab extends ConsumerWidget {
               SubMenuCard(
                 title: l10n.settings_appearance_title,
                 children: [
+                  _SettingsRow(
+                    icon: TablerIcons.sun_moon,
+                    iconColor: CupertinoColors.systemIndigo,
+                    title: l10n.settings_appearance_modeTitle,
+                    subtitle: selectedAppearanceMode.labelOf(l10n),
+                    onTap: settingsAsync.isLoading
+                        ? null
+                        : () => _editAppearanceMode(
+                            context,
+                            ref,
+                            selectedAppearanceMode,
+                          ),
+                  ),
                   _SettingsRow(
                     icon: CupertinoIcons.app_badge,
                     iconColor: CupertinoColors.activeOrange,
@@ -295,6 +312,41 @@ class ServersSettingsTab extends ConsumerWidget {
         .read(appSettingsControllerProvider.notifier)
         .setRequestTimeoutSeconds(int.parse(value));
     showAppSuccessToast(updatedMessage);
+  }
+
+  Future<void> _editAppearanceMode(
+    BuildContext context,
+    WidgetRef ref,
+    AppAppearanceMode selectedMode,
+  ) async {
+    final l10n = context.l10n;
+    final result = await showAppActionPickerSheet<AppAppearanceMode>(
+      context,
+      title: l10n.settings_appearance_modeTitle,
+      selectedValue: selectedMode,
+      options: [
+        AppPickerOption(
+          value: AppAppearanceMode.system,
+          label: AppAppearanceMode.system.labelOf(l10n),
+          icon: TablerIcons.device_desktop,
+        ),
+        AppPickerOption(
+          value: AppAppearanceMode.light,
+          label: AppAppearanceMode.light.labelOf(l10n),
+          icon: TablerIcons.sun,
+        ),
+        AppPickerOption(
+          value: AppAppearanceMode.dark,
+          label: AppAppearanceMode.dark.labelOf(l10n),
+          icon: TablerIcons.moon,
+        ),
+      ],
+    );
+    if (result == null || result == selectedMode) return;
+
+    await ref
+        .read(appSettingsControllerProvider.notifier)
+        .setAppearanceMode(result);
   }
 
   Future<void> _editCustomHeaders(

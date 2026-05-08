@@ -29,12 +29,12 @@ class TerminalServerCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: _TerminalCardColors.background,
+        color: _TerminalCardColors.background(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isSelected
-              ? _TerminalCardColors.selectedBorder
-              : _TerminalCardColors.border,
+              ? _TerminalCardColors.selectedBorder(context)
+              : _TerminalCardColors.border(context),
           width: isSelected ? 1.1 : 0.8,
         ),
       ),
@@ -160,10 +160,7 @@ class _FallbackCardContent extends StatelessWidget {
         const SizedBox(height: 12),
         const _Divider(),
         const SizedBox(height: 12),
-        _FooterLine(
-          uptime: loading ? '' : 'reading',
-          loading: loading,
-        ),
+        _FooterLine(uptime: loading ? '' : 'reading', loading: loading),
       ],
     );
   }
@@ -184,13 +181,13 @@ class _HeaderLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Text(
+        Text(
           r'$',
           style: TextStyle(
             fontFamily: 'Menlo',
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: _TerminalCardColors.green,
+            color: _TerminalCardColors.green(context),
             height: 1,
           ),
         ),
@@ -202,11 +199,11 @@ class _HeaderLine extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Menlo',
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: _TerminalCardColors.green,
+                    color: _TerminalCardColors.green(context),
                     height: 1.18,
                   ),
                 ),
@@ -234,11 +231,11 @@ class _SubtitleLine extends StatelessWidget {
       text.isEmpty ? '--' : text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Menlo',
         fontSize: 13,
         fontWeight: FontWeight.w500,
-        color: _TerminalCardColors.muted,
+        color: _TerminalCardColors.muted(context),
         height: 1.25,
       ),
     );
@@ -257,8 +254,8 @@ class _StatusLabel extends StatelessWidget {
     }
 
     final color = status.hasData
-        ? _TerminalCardColors.green
-        : _TerminalCardColors.orange;
+        ? _TerminalCardColors.green(context)
+        : _TerminalCardColors.orange(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -324,8 +321,8 @@ class _MetricItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final valueColor = data.isWarning
-        ? _TerminalCardColors.red
-        : _TerminalCardColors.text;
+        ? _TerminalCardColors.red(context)
+        : _TerminalCardColors.text(context);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -335,11 +332,11 @@ class _MetricItem extends StatelessWidget {
             data.label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Menlo',
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: _TerminalCardColors.green,
+              color: _TerminalCardColors.green(context),
               height: 1,
             ),
           ),
@@ -371,7 +368,7 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 1, color: _TerminalCardColors.divider);
+    return Container(height: 1, color: _TerminalCardColors.divider(context));
   }
 }
 
@@ -385,13 +382,13 @@ class _FooterLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Text(
+        Text(
           'uptime',
           style: TextStyle(
             fontFamily: 'Menlo',
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: _TerminalCardColors.green,
+            color: _TerminalCardColors.green(context),
             height: 1,
           ),
         ),
@@ -403,23 +400,23 @@ class _FooterLine extends StatelessWidget {
                   uptime,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Menlo',
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: _TerminalCardColors.text,
+                    color: _TerminalCardColors.text(context),
                     height: 1,
                   ),
                 ),
         ),
         const SizedBox(width: 10),
-        const Text(
+        Text(
           'more >',
           style: TextStyle(
             fontFamily: 'Menlo',
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: _TerminalCardColors.green,
+            color: _TerminalCardColors.green(context),
             height: 1,
           ),
         ),
@@ -441,13 +438,33 @@ class _MetricData {
 }
 
 class _TerminalCardColors {
-  static const background = Color(0xFFFFFFFF);
-  static const border = Color(0xFFE5E7EB);
-  static const selectedBorder = Color(0xFF8FD3AA);
-  static const divider = Color(0xFFEEF0F2);
-  static const green = Color(0xFF16803A);
-  static const text = Color(0xFF20242A);
-  static const muted = Color(0xFF667085);
-  static const red = Color(0xFFB42318);
-  static const orange = Color(0xFFB54708);
+  static bool isDark(BuildContext context) =>
+      CupertinoTheme.brightnessOf(context) == Brightness.dark;
+
+  static Color background(BuildContext context) =>
+      isDark(context) ? const Color(0xFF0F1412) : const Color(0xFFFFFFFF);
+
+  static Color border(BuildContext context) =>
+      isDark(context) ? const Color(0xFF243026) : const Color(0xFFE5E7EB);
+
+  static Color selectedBorder(BuildContext context) =>
+      isDark(context) ? const Color(0xFF4ADE80) : const Color(0xFF8FD3AA);
+
+  static Color divider(BuildContext context) =>
+      isDark(context) ? const Color(0xFF1F2A23) : const Color(0xFFEEF0F2);
+
+  static Color green(BuildContext context) =>
+      isDark(context) ? const Color(0xFF4ADE80) : const Color(0xFF16803A);
+
+  static Color text(BuildContext context) =>
+      isDark(context) ? const Color(0xFFE5E7EB) : const Color(0xFF20242A);
+
+  static Color muted(BuildContext context) =>
+      isDark(context) ? const Color(0xFF9CA3AF) : const Color(0xFF667085);
+
+  static Color red(BuildContext context) =>
+      isDark(context) ? const Color(0xFFF87171) : const Color(0xFFB42318);
+
+  static Color orange(BuildContext context) =>
+      isDark(context) ? const Color(0xFFFBBF24) : const Color(0xFFB54708);
 }

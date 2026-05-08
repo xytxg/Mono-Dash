@@ -3109,6 +3109,18 @@
   "@settings_appearance_title": {
     "description": "Settings section title for appearance options."
   },
+  "settings_appearance_modeTitle": "Appearance Mode",
+  "@settings_appearance_modeTitle": {
+    "description": "Settings row and picker title for app appearance mode."
+  },
+  "settings_appearance_modeLight": "Light",
+  "@settings_appearance_modeLight": {
+    "description": "Light appearance mode option."
+  },
+  "settings_appearance_modeDark": "Dark",
+  "@settings_appearance_modeDark": {
+    "description": "Dark appearance mode option."
+  },
   "settings_appearance_appIconTitle": "App Icon",
   "@settings_appearance_appIconTitle": {
     "description": "Settings row title for app icon selection."
