@@ -16,7 +16,7 @@ class RevenueCatConfig {
   const RevenueCatConfig._();
 
   static const iosApiKey = 'appl_uQclCTdAgutFrwPUlmIzMxhagIe';
-  static const androidApiKey = '';
+  static const androidApiKey = 'goog_YjNRxmMCFThKyAaXIPAiralEXXJ';
   static const webApiKey = '';
   static const entitlementId = 'Mono Dash Unlimited';
   static const offeringId = 'default';

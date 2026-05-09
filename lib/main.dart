@@ -36,6 +36,7 @@ class MyApp extends ConsumerWidget {
         AppAppearanceMode.system;
 
     return CupertinoApp.router(
+      debugShowCheckedModeBanner: false,
       onGenerateTitle: (context) => AppLocalizations.of(context).app_title,
       theme: switch (appearanceMode) {
         AppAppearanceMode.system => AppTheme.systemTheme,

@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:dynamic_app_icon_flutter_plus/dynamic_app_icon_flutter_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -135,6 +137,24 @@ class AppIconSettingsPage extends ConsumerWidget {
     final unsupportedMessage = context.l10n.settings_appIcon_unsupported;
     final failedTitle = context.l10n.settings_appIcon_failedTitle;
     final okLabel = context.l10n.common_ok;
+
+    if (Platform.isAndroid && variant.alternateIconName != null) {
+      showCupertinoDialog<void>(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: Text(failedTitle),
+          content: Text(unsupportedMessage),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(okLabel),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     await controller.setAppIconVariant(variant);
 
     try {
