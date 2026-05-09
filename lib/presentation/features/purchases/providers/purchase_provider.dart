@@ -135,12 +135,29 @@ class PurchaseController extends AsyncNotifier<PurchaseState> {
 
     try {
       await _configure(apiKey);
-      return await _loadState();
     } catch (error) {
+      // SDK 初始化失败（极少见，比如平台不支持），完全无法走内购链路
       AppLogger.w(_tag, 'Purchase service initialization failed: $error');
       final localUnlocked = _isLocallyUnlocked();
       return PurchaseState(
         isConfigured: false,
+        isUnlocked: localUnlocked,
+        freeServerLimit: RevenueCatConfig.freeServerLimit,
+        entitlementId: RevenueCatConfig.entitlementId,
+        message: localUnlocked
+            ? l10n.purchases_serviceUnavailableOfflineUnlocked
+            : l10n.purchases_serviceUnavailableNetwork,
+      );
+    }
+
+    // SDK 已就绪后再尝试拉取状态；离线/拉取失败仅影响展示，不影响后续恢复购买
+    try {
+      return await _loadState();
+    } catch (error) {
+      AppLogger.w(_tag, 'Purchase state load failed: $error');
+      final localUnlocked = _isLocallyUnlocked();
+      return PurchaseState(
+        isConfigured: true,
         isUnlocked: localUnlocked,
         freeServerLimit: RevenueCatConfig.freeServerLimit,
         entitlementId: RevenueCatConfig.entitlementId,

@@ -2,7 +2,7 @@ import '../entities/server.dart';
 
 /// 面板服务器仓库抽象。
 ///
-/// 封装服务器元数据 + API Key 的读写，屏蔽底层存储细节（Isar + SecureStorage）。
+/// 封装服务器元数据 + API Key 的读写，屏蔽底层存储细节。
 abstract class ServerRepository {
   Future<List<Server>> list();
 

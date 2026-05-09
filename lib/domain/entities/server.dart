@@ -1,10 +1,5 @@
-import 'package:isar/isar.dart';
-
-part 'server.g.dart';
-
-@collection
 class Server {
-  Id id = Isar.autoIncrement;
+  int id = 0;
 
   String? name;
 
@@ -22,7 +17,6 @@ class Server {
 
   DateTime? lastUsedAt;
 
-  @ignore
   String get displayName {
     if (name != null && name!.isNotEmpty) {
       return name!;
@@ -30,9 +24,47 @@ class Server {
     return '$host:$port';
   }
 
-  @ignore
   Uri get baseUrl {
     final scheme = isHttps ? 'https' : 'http';
     return Uri.parse('$scheme://$host:$port');
+  }
+
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'host': host,
+      'port': port,
+      'isHttps': isHttps,
+      'allowInsecureConnections': allowInsecureConnections,
+      'sortIndex': sortIndex,
+      'createdAt': createdAt?.toIso8601String(),
+      'lastUsedAt': lastUsedAt?.toIso8601String(),
+    };
+  }
+
+  static Server fromJson(Map<String, Object?> json) {
+    return Server()
+      ..id = _intValue(json['id'])
+      ..name = json['name'] as String?
+      ..host = json['host'] as String
+      ..port = _intValue(json['port'])
+      ..isHttps = json['isHttps'] == true
+      ..allowInsecureConnections = json['allowInsecureConnections'] == true
+      ..sortIndex = _intValue(json['sortIndex'])
+      ..createdAt = _dateTimeValue(json['createdAt'])
+      ..lastUsedAt = _dateTimeValue(json['lastUsedAt']);
+  }
+
+  static int _intValue(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static DateTime? _dateTimeValue(Object? value) {
+    if (value is! String || value.isEmpty) return null;
+    return DateTime.tryParse(value);
   }
 }

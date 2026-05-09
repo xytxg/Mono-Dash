@@ -7,7 +7,7 @@ import '../../domain/repositories/server_repository.dart';
 
 part 'server_repository_impl.g.dart';
 
-/// [ServerRepository] 的 Isar + SecureStorage 实现。
+/// [ServerRepository] 的本地 JSON + SecureStorage 实现。
 class ServerRepositoryImpl implements ServerRepository {
   ServerRepositoryImpl(this._storage);
 
@@ -42,7 +42,6 @@ class ServerRepositoryImpl implements ServerRepository {
       ..sortIndex = existing.length;
 
     await _storage.saveServer(server);
-    // After saveServer, Isar sets the auto-incremented id on the object.
     await _storage.saveApiKey(server.id, apiKey);
     return server;
   }
