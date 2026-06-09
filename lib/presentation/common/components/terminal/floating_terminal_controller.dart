@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:xterm/xterm.dart';
 
+import '../../../../core/widgets/terminal_live_activity_service.dart';
+
 /// 悬浮终端的完整状态快照。
 ///
 /// 当用户点击"悬浮"时，终端屏幕将自身状态打包成此对象，
@@ -84,6 +86,12 @@ class FloatingTerminalController extends ChangeNotifier {
   void floatTerminal(FloatingTerminalState state) {
     _states.add(state);
     notifyListeners();
+    TerminalLiveActivityService.start(
+      id: state.id,
+      title: state.title,
+      subtitle: state.command.isNotEmpty ? state.command : state.statusMessage,
+      status: state.isConnected ? 'connected' : 'disconnected',
+    );
   }
 
   void updateBubbleSnapshot(
@@ -102,6 +110,12 @@ class FloatingTerminalController extends ChangeNotifier {
     if (index == -1) return null;
     final state = _states.removeAt(index);
     notifyListeners();
+    TerminalLiveActivityService.end(
+      id: state.id,
+      title: state.title,
+      subtitle: state.command.isNotEmpty ? state.command : state.statusMessage,
+      status: 'disconnected',
+    );
     return state;
   }
 
@@ -112,6 +126,12 @@ class FloatingTerminalController extends ChangeNotifier {
     final state = _states.removeAt(index);
     state.dispose();
     notifyListeners();
+    TerminalLiveActivityService.end(
+      id: state.id,
+      title: state.title,
+      subtitle: state.command.isNotEmpty ? state.command : state.statusMessage,
+      status: 'disconnected',
+    );
   }
 
   @override
@@ -120,6 +140,7 @@ class FloatingTerminalController extends ChangeNotifier {
       state.dispose();
     }
     _states.clear();
+    TerminalLiveActivityService.endAll();
     super.dispose();
   }
 }

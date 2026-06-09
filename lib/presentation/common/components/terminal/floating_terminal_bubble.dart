@@ -6,8 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/localization/l10n_x.dart';
-import 'floating_terminal_controller.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../action_sheet_launcher.dart';
+import '../action_sheet_scaffold.dart';
 import '../../../../core/router/app_router.dart';
+import 'floating_terminal_controller.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 import 'app_terminal.dart';
 
@@ -416,80 +419,71 @@ class _FloatingTerminalBubbleState extends State<_FloatingTerminalBubble>
     HapticFeedback.mediumImpact();
     final l10n = context.l10n;
 
-    final route = CupertinoModalPopupRoute<void>(
-      builder: (ctx) => CupertinoActionSheet(
-        actions: [
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _commitSnapshot();
-              widget.onRestore();
-            },
-            child: Text(l10n.terminal_floatRestore),
+    showActionSheet<void>(
+      context: rootNavigatorKey.currentContext ?? context,
+      useRootNavigator: true,
+      builder: (ctx) => ActionSheetScaffold(
+        isAdaptive: true,
+        showHandle: false,
+        isFloating: true,
+        panelHeader: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 10, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.terminal_float,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.label(ctx),
+                  ),
+                ),
+              ),
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  l10n.common_cancel,
+                  style: TextStyle(
+                    color: AppColors.secondaryLabel(ctx),
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
           ),
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              widget.onClose();
-            },
-            child: Text(l10n.terminal_floatClose),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () {
-            Navigator.of(ctx).pop();
-            _startDockTimer();
-          },
-          child: Text(l10n.common_cancel),
         ),
-      ),
-      barrierDismissible: true,
-    );
-
-    final navigator = rootNavigatorKey.currentState;
-    if (navigator != null) {
-      navigator.push(route).then((_) {
-        if (mounted && !_isDragging && !_isDocked) {
-          _startDockTimer();
-        }
-      });
-    } else {
-      showCupertinoModalPopup<void>(
-        context: context,
-        builder: (ctx) => CupertinoActionSheet(
-          actions: [
-            CupertinoActionSheetAction(
-              onPressed: () {
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MenuOptionRow(
+              icon: TablerIcons.arrows_maximize,
+              label: l10n.terminal_floatRestore,
+              onTap: () {
                 Navigator.of(ctx).pop();
                 _commitSnapshot();
                 widget.onRestore();
               },
-              child: Text(l10n.terminal_floatRestore),
             ),
-            CupertinoActionSheetAction(
-              isDestructiveAction: true,
-              onPressed: () {
+            _MenuOptionRow(
+              icon: TablerIcons.trash,
+              label: l10n.terminal_floatClose,
+              isDestructive: true,
+              onTap: () {
                 Navigator.of(ctx).pop();
                 widget.onClose();
               },
-              child: Text(l10n.terminal_floatClose),
             ),
+            const SizedBox(height: 12),
           ],
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _startDockTimer();
-            },
-            child: Text(l10n.common_cancel),
-          ),
         ),
-      ).then((_) {
-        if (mounted && !_isDragging && !_isDocked) {
-          _startDockTimer();
-        }
-      });
-    }
+      ),
+    ).then((_) {
+      if (mounted && !_isDragging && !_isDocked) {
+        _startDockTimer();
+      }
+    });
   }
 
   @override
@@ -748,5 +742,50 @@ class FluidDockPainter extends CustomPainter {
         oldDelegate.borderColor != borderColor ||
         oldDelegate.isDark != isDark ||
         oldDelegate.glowValue != glowValue;
+  }
+}
+
+class _MenuOptionRow extends StatelessWidget {
+  const _MenuOptionRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDestructive
+        ? CupertinoColors.systemRed.resolveFrom(context)
+        : AppColors.label(context);
+
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
