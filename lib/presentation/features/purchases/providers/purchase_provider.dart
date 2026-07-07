@@ -20,12 +20,14 @@ class RevenueCatConfig {
   static const iosApiKey = 'appl_uQclCTdAgutFrwPUlmIzMxhagIe';
   static const androidApiKey = 'goog_YjNRxmMCFThKyAaXIPAiralEXXJ';
   static const webApiKey = '';
+  static const testApiKey = 'test_SEIhVrgkUMdVbyxHkyETYJbKADc';
   static const entitlementId = 'Mono Dash Unlimited';
   static const offeringId = 'default';
   static const freeServerLimit = 1;
   static const bypassServerLimitCheck = false;
 
   static String? get apiKey {
+    if (kDebugMode) return _usableApiKey(testApiKey);
     if (kIsWeb) return webApiKey.isEmpty ? null : webApiKey;
     switch (defaultTargetPlatform) {
       case TargetPlatform.iOS:
